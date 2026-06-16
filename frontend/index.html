@@ -1,0 +1,184 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SignX Demo</title>
+  <link rel="stylesheet" href="/frontend/style.css" />
+</head>
+<body>
+  <main class="demo-console">
+    <header class="hero-bar">
+      <section class="brand-copy" aria-label="SignX 产品介绍">
+        <p class="kicker">Desktop Sign Language Voice Terminal</p>
+        <h1>SignX</h1>
+        <p class="subtitle">桌面式手语语音翻译终端</p>
+        <p class="tagline">沟通无障碍 · 连接每一次表达</p>
+      </section>
+
+      <section class="top-badges" aria-label="演示状态">
+        <span>Mock Demo</span>
+        <span id="modeBadge">Program Mode</span>
+        <span id="cameraBadge">Camera Init</span>
+        <span>Local Preview</span>
+      </section>
+    </header>
+
+    <section class="main-grid">
+      <section class="camera-panel" aria-label="摄像头识别操作区">
+        <div class="panel-heading">
+          <div>
+            <p class="section-label">Live Capture</p>
+            <h2>手语动作采集</h2>
+          </div>
+          <div class="status-chip" id="statusText">摄像头准备中</div>
+        </div>
+
+        <section class="mode-card" aria-label="模式切换">
+          <div class="mode-switch" role="tablist" aria-label="识别模式">
+            <button class="mode-button active" id="programModeButton" type="button" data-mode="program" aria-pressed="true">程序模式</button>
+            <button class="mode-button" id="demoModeButton" type="button" data-mode="demo" aria-pressed="false">演示模式</button>
+          </div>
+          <p id="modeDescription">程序模式：录制手语视频并进入 AI 分析流程，适合后续接入真实识别 API。</p>
+        </section>
+
+        <div class="sensor-ring" id="sensorRing">
+          <div class="camera-frame">
+            <video id="preview" autoplay muted playsinline></video>
+            <div class="video-placeholder" id="videoPlaceholder">等待摄像头画面</div>
+            <div class="scan-line" aria-hidden="true"></div>
+            <div class="corner-status" id="cornerStatus">摄像头准备中</div>
+            <div class="countdown" id="countdownText" hidden>3</div>
+          </div>
+        </div>
+
+        <div class="record-progress" aria-hidden="true">
+          <span id="progressBar"></span>
+        </div>
+
+        <div class="control-strip">
+          <button class="primary-button" id="startButton" type="button" disabled>开始识别</button>
+          <button class="secondary-button" id="retryButton" type="button" disabled>重新识别</button>
+          <p id="hintText">正在请求摄像头权限...</p>
+        </div>
+
+        <p class="error-message" id="errorText" role="alert" hidden></p>
+      </section>
+
+      <aside class="side-panel" aria-label="识别结果与产品示意">
+        <div class="product-stage" aria-label="SignX 产品示意图">
+          <div class="product-device">
+            <div class="device-lid"></div>
+            <div class="black-band">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="gold-light"></div>
+            <div class="device-body">
+              <strong>SignX</strong>
+              <div class="speaker-grille" aria-hidden="true">
+                <i></i><i></i><i></i><i></i><i></i><i></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <section class="result-card" aria-label="识别结果">
+          <div class="card-title-row">
+            <div>
+              <p class="section-label">Recognition Output</p>
+              <h2>识别结果</h2>
+            </div>
+            <span id="stateDot" class="state-dot"></span>
+          </div>
+
+          <dl class="result-list">
+            <div>
+              <dt>当前模式</dt>
+              <dd id="currentModeText">程序模式</dd>
+            </div>
+            <div>
+              <dt>识别含义</dt>
+              <dd id="meaningText">--</dd>
+            </div>
+            <div>
+              <dt>置信度</dt>
+              <dd id="confidenceText">--</dd>
+            </div>
+            <div>
+              <dt>播报文本</dt>
+              <dd id="spokenText">--</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="flow-card" aria-label="流程状态">
+          <p class="section-label">Process</p>
+          <ol class="flow-steps" id="flowSteps">
+            <li data-step="capture"><span></span>摄像头捕捉</li>
+            <li data-step="record"><span></span>动作录制</li>
+            <li data-step="analyze"><span></span><b id="analyzeStepText">AI 分析</b></li>
+            <li data-step="speak"><span></span>语音播报</li>
+          </ol>
+        </section>
+
+        <section class="voice-card" aria-label="个性化声音设置">
+          <div class="card-title-row">
+            <div>
+              <p class="section-label">Personal Voice</p>
+              <h2>个性化声音</h2>
+              <p class="voice-subtitle">调整你希望被听见的声音</p>
+            </div>
+          </div>
+
+          <div class="voice-controls">
+            <label class="voice-control" for="volumeSlider">
+              <span id="volumeValue">音量：100%</span>
+              <input id="volumeSlider" type="range" min="0" max="1" step="0.01" value="1" />
+            </label>
+
+            <label class="voice-control" for="rateSlider">
+              <span id="rateValue">语速：1.0x</span>
+              <input id="rateSlider" type="range" min="0.6" max="1.6" step="0.05" value="1" />
+            </label>
+
+            <label class="voice-control" for="pitchSlider">
+              <span id="pitchValue">音高：1.0</span>
+              <input id="pitchSlider" type="range" min="0.5" max="2" step="0.05" value="1" />
+            </label>
+            <p class="voice-help">音高越高，声音越明亮；音高越低，声音越沉稳。</p>
+
+            <div class="voice-group">
+              <p class="voice-label">声音类型</p>
+              <div class="voice-type-switch" aria-label="声音类型">
+                <button type="button" class="voice-type-button active" data-voice-type="all">全部声音</button>
+                <button type="button" class="voice-type-button" data-voice-type="female">女声优先</button>
+                <button type="button" class="voice-type-button" data-voice-type="male">男声优先</button>
+                <button type="button" class="voice-type-button" data-voice-type="chinese">中文声音</button>
+              </div>
+            </div>
+
+            <label class="voice-select-wrap" for="voiceSelect">
+              <span class="voice-label">声音选择</span>
+              <select id="voiceSelect"></select>
+            </label>
+
+            <p class="voice-notice" id="voiceNotice">不同电脑和浏览器支持的系统声音不同，男声 / 女声选项会根据当前设备可用声音自动匹配。</p>
+
+            <div class="preset-row" aria-label="声音预设">
+              <button type="button" class="preset-button" data-voice-preset="female">温和女声</button>
+              <button type="button" class="preset-button" data-voice-preset="neutral">清晰中性</button>
+              <button type="button" class="preset-button" data-voice-preset="male">沉稳男声</button>
+            </div>
+
+            <button type="button" class="voice-test-button" id="testVoiceButton">试听当前声音</button>
+          </div>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <script src="/frontend/app.js"></script>
+</body>
+</html>
