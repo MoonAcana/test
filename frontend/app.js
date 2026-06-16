@@ -29,6 +29,9 @@ const voiceSelect = document.getElementById("voiceSelect");
 const voiceNotice = document.getElementById("voiceNotice");
 const presetButtons = Array.from(document.querySelectorAll("[data-voice-preset]"));
 const testVoiceButton = document.getElementById("testVoiceButton");
+const templateLabelSelect = document.getElementById("templateLabelSelect");
+const recordTemplateButton = document.getElementById("recordTemplateButton");
+const trainingMessage = document.getElementById("trainingMessage");
 
 let currentMode = "program";
 let mediaStream = null;
@@ -147,6 +150,15 @@ function getMode() {
 }
 
 function friendlyError(message) {
+  if (!message) {
+    return "操作失败，请稍后重试。";
+  }
+  if (message.includes("No sign templates found") || message.includes("No keypoint templates found")) {
+    return "还没有录入手语模板。请先在模板录入区域录入当前动作模板。";
+  }
+  if (message.includes("No hand keypoints detected") || message.includes("No hands detected")) {
+    return "没有检测到清晰的手部关键点，请调整摄像头位置并重新录制。";
+  }
   if (message.includes("DASHSCOPE_API_KEY is missing")) {
     return "API Key 未配置，请在 .env 中填写 DASHSCOPE_API_KEY，或切换 AI_PROVIDER=mock。";
   }
@@ -193,6 +205,8 @@ function setMode(modeName, shouldReset = true) {
   modeBadge.textContent = mode.badge;
   modeDescription.textContent = mode.description;
   analyzeStepText.textContent = mode.analyzeStep;
+  document.body.classList.toggle("mode-demo", currentMode === "demo");
+  recordTemplateButton.disabled = busy || !mediaStream || currentMode !== "program";
 
   if (shouldReset) {
     resetResult(false);
@@ -209,6 +223,7 @@ function setControlsDisabled(disabled) {
   modeButtons.forEach((button) => {
     button.disabled = disabled;
   });
+  recordTemplateButton.disabled = disabled || !mediaStream || currentMode !== "program";
 }
 
 function setError(message) {
@@ -221,6 +236,12 @@ function setError(message) {
 function clearError() {
   errorText.textContent = "";
   errorText.hidden = true;
+}
+
+function setTrainingMessage(message, type = "") {
+  trainingMessage.textContent = message;
+  trainingMessage.classList.toggle("success", type === "success");
+  trainingMessage.classList.toggle("error", type === "error");
 }
 
 function resetResult(clearMode = false) {
@@ -338,6 +359,28 @@ function recordVideo() {
       }
     }, 5000);
   });
+}
+
+async function uploadTemplateVideo(videoBlob) {
+  setStatus("analyzing", "正在保存手语模板...");
+  const label = templateLabelSelect.value;
+  const formData = new FormData();
+  formData.append("label", label);
+  formData.append("file", videoBlob, `signx-template-${label}.webm`);
+
+  const response = await fetch("/api/record-template", {
+    method: "POST",
+    body: formData,
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || "/api/record-template 返回异常");
+  }
+  if (data.error) {
+    throw new Error(data.error);
+  }
+  return data;
 }
 
 async function uploadVideo(videoBlob) {
@@ -601,6 +644,34 @@ function speakText(text) {
   });
 }
 
+async function recordTemplate() {
+  if (busy || !mediaStream || currentMode !== "program") {
+    return;
+  }
+
+  busy = true;
+  setControlsDisabled(true);
+  clearError();
+  setTrainingMessage("准备录入模板，请把手势放在摄像头中央。", "");
+
+  try {
+    await runCountdown();
+    const videoBlob = await recordVideo();
+    const result = await uploadTemplateVideo(videoBlob);
+    setTrainingMessage(`模板保存成功：${result.template_file || templateLabelSelect.value}。建议同一动作录入 2 到 3 次。`, "success");
+    setStatus("done", "模板录入完成，可以继续录入或开始识别。", "模板已保存");
+  } catch (error) {
+    console.error(error);
+    const message = friendlyError(error.message || "模板录入失败，请重试。");
+    setTrainingMessage(message, "error");
+    setError(message);
+  } finally {
+    busy = false;
+    setControlsDisabled(false);
+    document.body.classList.remove("is-recording");
+  }
+}
+
 async function startRecognition() {
   if (busy || !mediaStream) {
     return;
@@ -643,6 +714,8 @@ modeButtons.forEach((button) => {
 });
 startButton.addEventListener("click", startRecognition);
 retryButton.addEventListener("click", retryRecognition);
+recordTemplateButton.addEventListener("click", recordTemplate);
 setMode("program", false);
 initVoiceSettings();
 initCamera();
+

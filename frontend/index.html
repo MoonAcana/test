@@ -63,6 +63,34 @@
         </div>
 
         <p class="error-message" id="errorText" role="alert" hidden></p>
+        <section class="training-card" id="trainingCard" aria-label="模板录入">
+          <div class="training-heading">
+            <div>
+              <p class="section-label">Training</p>
+              <h2>模板录入 / Training</h2>
+            </div>
+          </div>
+          <p class="training-description">第一次使用关键点识别模式前，需要先录入手语模板。每个动作建议录入 2 到 3 次，识别会更稳定。</p>
+          <div class="training-controls">
+            <label class="training-select-wrap" for="templateLabelSelect">
+              <span>选择手语标签</span>
+              <select id="templateLabelSelect">
+                <option value="hello">hello：你好</option>
+                <option value="thanks">thanks：谢谢</option>
+                <option value="agree">agree：我同意这个方案</option>
+                <option value="disagree">disagree：我不同意这个方案</option>
+                <option value="repeat">repeat：请再说一遍</option>
+                <option value="question">question：我有一个问题</option>
+                <option value="supplement">supplement：我想补充一个想法</option>
+                <option value="start">start：我们可以开始了</option>
+                <option value="modify">modify：这个部分需要修改</option>
+                <option value="think">think：我需要一点时间思考</option>
+              </select>
+            </label>
+            <button class="training-button" id="recordTemplateButton" type="button" disabled>录入当前手语模板</button>
+          </div>
+          <p class="training-message" id="trainingMessage" role="status">模板会上传到 /api/record-template，用于 keypoint 程序模式匹配。</p>
+        </section>
       </section>
 
       <aside class="side-panel" aria-label="识别结果与产品示意">
@@ -182,3 +210,4 @@
   <script src="/frontend/app.js"></script>
 </body>
 </html>
+
